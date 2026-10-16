@@ -1,0 +1,24 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Skill copies are in sync with shared/
+        run: bash scripts/sync.sh --check
+      - name: Risk classifier tests
+        run: bash tests/risk.test.sh
+      - name: Shellcheck
+        if: runner.os == 'Linux'
+        run: shellcheck -S warning shared/*.sh skills/keel-review/scripts/*.sh scripts/*.sh tests/*.sh

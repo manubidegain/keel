@@ -1,0 +1,21 @@
+# Example: React Native (Expo) app with its own API
+project:
+  type: mobile
+  data: [personal]
+  users: 3000
+  rollback: "OTA update revert via EAS (~10 min); store builds cannot be rolled back"
+  deploy: expo-eas + app stores
+
+commands:
+  test: npm test
+  lint: npm run lint
+  typecheck: npx tsc --noEmit
+  e2e: none
+
+sensitive:
+  - "app.json"          # versions, permissions, bundle ids
+  - "src/api/client.ts" # contract with the backend; old app versions stay in use
+  - "src/storage/**"
+
+standards:
+  - .agents/standards/mobile.md

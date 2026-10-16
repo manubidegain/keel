@@ -1,0 +1,10 @@
+{
+  "name": "keel",
+  "version": "0.1.0",
+  "description": "Risk-aware checks and code review for any project: classifies changes by risk, runs only the checks that matter, reviews PRs and writes tests with real value.",
+  "author": { "name": "manubidegain", "url": "https://github.com/manubidegain" },
+  "homepage": "https://github.com/manubidegain/keel",
+  "repository": "https://github.com/manubidegain/keel",
+  "license": "MIT",
+  "keywords": ["code-review", "risk", "testing", "standards", "pull-requests", "qa"]
+}

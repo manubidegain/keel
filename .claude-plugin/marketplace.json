@@ -1,0 +1,11 @@
+{
+  "name": "keel",
+  "owner": { "name": "manubidegain", "url": "https://github.com/manubidegain" },
+  "plugins": [
+    {
+      "name": "keel",
+      "source": "./",
+      "description": "Risk-aware checks and code review for any project."
+    }
+  ]
+}

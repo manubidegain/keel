@@ -1,0 +1,44 @@
+# keel automatic PR review — copy to .github/workflows/keel-review.yml
+#
+# Reviews every PR with keel-review and posts one review (summary + inline comments).
+# Needs an ANTHROPIC_API_KEY repository secret. GitHub does not expose secrets to
+# workflows triggered by PRs from forks, so fork PRs are skipped by default.
+name: keel review
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+jobs:
+  keel:
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install keel skills
+        run: |
+          git clone --depth 1 https://github.com/manubidegain/keel "$RUNNER_TEMP/keel"
+          mkdir -p .claude/skills
+          cp -R "$RUNNER_TEMP"/keel/skills/* .claude/skills/
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Use the keel-review skill to review this pull request.
+            This is an unattended CI run: there is no person to confirm, so after drafting
+            the review, post it with post_review.sh using `event: COMMENT`.
+            Do not run the project's code or tests. Do not post anything else.
+          claude_args: |
+            --allowedTools "Read,Grep,Glob,Write,Bash(bash .claude/skills/keel-review/scripts/*),Bash(git diff:*),Bash(git log:*),Bash(gh api:*)"
+        env:
+          GH_TOKEN: ${{ github.token }}

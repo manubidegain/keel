@@ -1,0 +1,19 @@
+# Example: open-source library published to a package registry
+project:
+  type: library
+  data: [none]
+  users: 0            # no production of its own; the public API is the risk
+  rollback: "publish a patch release; a published version cannot be unpublished"
+
+commands:
+  test: npm test
+  lint: npm run lint
+  build: npm run build
+
+sensitive:
+  - "src/index.ts"    # public exports = semver contract
+  - "package.json"
+
+tiers:
+  medium:
+    require: [test, lint, typecheck, build]
