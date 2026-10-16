@@ -22,6 +22,7 @@ jobs:
           bash tests/risk.test.sh
           bash tests/slop.test.sh
           bash tests/prove.test.sh
+          bash tests/review_ui.test.sh
       - name: Eval fixtures build and their tests pass
         run: |
           bash evals/build.sh "$RUNNER_TEMP/evals"

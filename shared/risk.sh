@@ -189,7 +189,7 @@ is_test='(^|/)(tests?|__tests__|spec|specs|e2e|cypress)/|[._-](test|spec)\.[a-z]
 is_code='\.(js|jsx|ts|tsx|mjs|cjs|py|go|rb|php|java|kt|swift|rs|dart|cs|vue|svelte)$'
 code_n=$(grep -Ev "$is_test" "$tmp/paths" | grep -Ec "$is_code")
 test_n=$(grep -Ec "$is_test" "$tmp/paths")
-code_add=$(grep -Ev "$is_test" "$tmp/files.tsv" | awk -F'\t' -v re="$is_code" '$1 ~ re {s+=$2} END{print s+0}')
+code_add=$(grep -Ev "$is_test" "$tmp/files.tsv" | RE="$is_code" awk -F'\t' 'BEGIN{re=ENVIRON["RE"]} $1 ~ re {s+=$2} END{print s+0}')
 if [ "$code_n" -gt 0 ] && [ "$test_n" -eq 0 ] && [ "$code_add" -gt 40 ]; then
   bump 1 "code changed (+$code_add lines in $code_n files) with no test changes"
 fi

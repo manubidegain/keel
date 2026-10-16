@@ -82,6 +82,25 @@ Read `references/voice.md` before drafting anything that will be posted.
    `never` = always post directly, still never `REQUEST_CHANGES`/`APPROVE` without the
    user's word. **Unattended (CI):** post `event: COMMENT` only.
 
+   **Visual review (optional).** If the policy says `review.ui: plannotator` (or the voice profile has `ui: plannotator`), or the user
+   asks to see the review on the diff, and `plannotator` is installed, do the "ask first"
+   above in [Plannotator](https://plannotator.ai) instead of the terminal:
+   1. `bash scripts/review_ui.sh open .keel/pr-<n>/review.txt --pr <PR url>` — prints a
+      `url:`; give it to the user in one line, in their language (the comments are on the
+      diff; edit, delete or add, then "Send Feedback"). Exit 3 = not installed → terminal.
+   2. `bash scripts/review_ui.sh wait .keel/pr-<n>/ui/result.json` — blocks up to 9 min;
+      exit 4 = still open, just wait again.
+   3. `bash scripts/review_ui.sh to-review .keel/pr-<n>/ui/result.json .keel/pr-<n>/final.txt`
+      then post `final.txt` with `post_review.sh` as is. Sending feedback **is** the yes:
+      don't confirm again and don't rewrite their text. Exceptions: if the draft was
+      `REQUEST_CHANGES`/`APPROVE`, ask in one line before posting that event with `--yes`
+      (the UI doesn't show it). Exit 5 (closed/dismissed): first run
+      `review_ui.sh posted <owner/repo> <n> .keel/pr-<n>/ui` — if it prints a URL the user
+      posted from Plannotator themselves; report the link and post nothing. Otherwise nothing
+      is posted. Exit 6 (every comment removed): ask what they want.
+   4. Compare `final.txt` with the draft for step 8.
+   Never use it unattended (nobody to click).
+
 7. **Re-reviews.** `previous_inline.tsv` lists what the user already said on this PR.
    Don't repeat it; say which earlier points are resolved and comment only on new problems.
 

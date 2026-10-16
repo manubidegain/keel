@@ -99,6 +99,12 @@ It asks before posting only when it matters: approving or requesting changes, se
 findings on public repos, critical PRs, outside contributors, or long reviews
 (`review.confirm: auto`, also `always` / `never`). Everything else is posted and linked.
 
+Prefer to see it on the diff first? With [Plannotator](https://plannotator.ai) installed and
+`review.ui: plannotator` in your policy, keel opens its draft there with every comment
+already on its line. Edit, delete or add comments, hit "Send Feedback", and keel posts
+exactly what you left — or post straight from Plannotator. Without it, everything stays in
+the terminal.
+
 If your agent adds its own attribution to commits or PRs, turn it off in the agent — in
 Claude Code: `"attribution": {"commit": "", "pr": ""}` in `~/.claude/settings.json`.
 

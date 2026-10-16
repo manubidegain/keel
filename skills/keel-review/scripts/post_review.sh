@@ -85,6 +85,8 @@ sig=$(awk '/^review:/{on=1;next} /^[^[:space:]#]/{on=0} on && /^[[:space:]]+sign
 [ -n "$sig" ] && summary="$summary
 
 $sig"
+# drop leading blank lines (e.g. the user deleted the summary and kept only comments)
+summary="$(printf '%s\n' "$summary" | awk 'NF{p=1} p')"
 
 payload="$tmp/payload.json"
 printf '{"event":"%s","commit_id":"%s","body":%s,"comments":[%s]}\n' \
