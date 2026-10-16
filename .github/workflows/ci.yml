@@ -24,10 +24,14 @@ jobs:
           bash tests/prove.test.sh
           bash tests/review_ui.test.sh
           bash tests/plan_risk.test.sh
+          bash tests/usage.test.sh
+          bash tests/usage_examples.test.sh
+          bash tests/hooks.test.sh
+          bash tests/learn.test.sh
       - name: Eval fixtures build and their tests pass
         run: |
           bash evals/build.sh "$RUNNER_TEMP/evals"
           for d in "$RUNNER_TEMP"/evals/*/; do (cd "$d" && node --test >/dev/null) || { echo "fixture tests fail: $d"; exit 1; }; done
       - name: Shellcheck
         if: runner.os == 'Linux'
-        run: shellcheck -S warning shared/*.sh skills/keel-review/scripts/*.sh scripts/*.sh tests/*.sh evals/*.sh
+        run: shellcheck -S warning shared/*.sh shared/hooks/* skills/*/scripts/*.sh scripts/*.sh tests/*.sh evals/*.sh evals/*/*/*.sh examples/usage/*.sh

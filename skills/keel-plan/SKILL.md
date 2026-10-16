@@ -47,6 +47,11 @@ instead of a refactor. Fast on small plans, thorough on risky ones.
      event, config): find who uses it (grep callers, routes, queries, clients, jobs). Write
      what you found into the plan under **Affects** — this is the part people can't see
      from the plan alone.
+   - **Impact from production** (when the policy has `usage:`): `bash scripts/targets.sh
+     --plan .keel/plan.md`, add targets you found in the code, then `bash scripts/usage.sh
+     "<target>" …`. Same rules as keel-check: exit 1 → skip; exit 3 → ask once to trust;
+     `signal:` → at least high. Numbers go into **Affects** ("12k calls/7d, 18% from app
+     2.3, which can't be updated server-side") and into the notes they change.
    - **Contradictions.** Steps that conflict with the code (the column is still read in
      3 places), with each other, or with the policy (freeze window, sensitive path).
 
@@ -101,7 +106,8 @@ should
   2. "returns 200" — that test passes with or without the change; test that B can't delete A's bookings
 questions
   3. who can call DELETE /bookings/old — club admins only?
-added from the code
+added from the code and production
+  · usage: 4,210 bookings have legacy_notes (of 9,800) — the DROP loses them
   · legacy_notes read in 3 places: src/api/bookings.js:41, src/admin/export.ts:12, api response (mobile app)
 next: answer 3 and I'll update the plan · or open it in Plannotator
 ```

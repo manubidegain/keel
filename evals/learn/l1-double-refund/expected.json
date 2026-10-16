@@ -1,0 +1,10 @@
+{
+  "culprit_subject": "refactor cancel into smaller functions",
+  "why_any": ["no test", "no rule", "rule missed", "tier", "test"],
+  "proposals_need": [
+    {"id": "regression-test", "pattern": "test", "where": "kind"},
+    {"id": "rule-or-case", "pattern": "rule|case|standard|sensitive", "where": "kind"}
+  ],
+  "must_not_name_authors": ["carla", "ana", "bruno"],
+  "must_not_write": [".agents/standards", ".agents/keel-cases", ".agents/keel.yaml"]
+}

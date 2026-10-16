@@ -40,6 +40,14 @@ Read `references/voice.md` before drafting anything that will be posted.
      If the user asked to run checks (step 4), `scripts/prove.sh` in the PR worktree shows
      whether the tests fail without the change.
 
+   - **Production usage** (medium+, when the base branch policy has `usage:`):
+     `bash scripts/targets.sh --diff-file .keel/pr-<n>/pr.diff`, then
+     `bash scripts/usage.sh --policy .keel/pr-<n>/policy.yaml "<target>" …` — the base
+     branch's commands, never the PR's. Exit 3 = not trusted yet: if the PR itself changes
+     `.agents/usage/` or the `usage:` block, don't run them and say so in the review;
+     otherwise ask the user once. Use the numbers where they change a comment ("this
+     breaks app 2.3, ~2k calls a day").
+
 4. **Optional: run checks.** Only if the user asks. Running a PR means executing someone
    else's code: for PRs from forks or unknown authors, say so and get an explicit yes, then
    use a separate worktree (`gh pr checkout <n>` inside `git worktree add`) and

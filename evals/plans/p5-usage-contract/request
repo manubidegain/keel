@@ -1,0 +1,1 @@
+Small cleanup: the bookings endpoint should return the price in dollars like the rest of the API. Plan below.

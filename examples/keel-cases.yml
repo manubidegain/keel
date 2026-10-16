@@ -1,0 +1,22 @@
+# keel incident cases — copy to .github/workflows/keel-cases.yml
+#
+# Replays every past incident in .agents/keel-cases/ (written by keel-learn) against the
+# current policy, so a change to .agents/keel.yaml can't quietly make keel blind to them.
+# No AI, no secrets, a few seconds.
+name: keel cases
+on:
+  pull_request:
+    paths: [".agents/**"]
+  push:
+    branches: [main]
+    paths: [".agents/**"]
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Replay incidents
+        run: |
+          git clone --depth 1 https://github.com/manubidegain/keel "$RUNNER_TEMP/keel"
+          bash "$RUNNER_TEMP/keel/shared/replay.sh" .agents/keel-cases

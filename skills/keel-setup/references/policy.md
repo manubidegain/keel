@@ -37,9 +37,19 @@ tiers:                     # override what each tier requires (defaults in keel-
     require: [test, lint, typecheck, build, e2e]
     review_until: no_must_fix_no_should_fix
 
-live_context:              # optional commands that print live numbers for keel-review / release decisions
-  active_users: "node scripts/active-users.js"
-  error_rate: ""
+usage:                     # optional: production numbers for what a change touches (see below)
+  sources:                 # name: command printing JSON lines; runs per target, read-only
+    traffic: "python3 .agents/usage/posthog.py"
+    data: "bash .agents/usage/postgres.sh"
+  high_when:               # a metric at or above this → the change counts as high risk
+    calls_7d: 1000
+    rows_with_value: 1
+  timeout: 20              # seconds per command
+  cache_minutes: 60
+
+hooks:                     # how strict the optional hooks are (installed per person by keel-setup)
+  stop: suggest            # off | suggest (one-line note to you) | ask (the agent runs keel-check, once)
+  pre_push: high           # off | high | critical — stop pushes at or above this tier until checked
 
 freeze:                    # windows where high/critical changes need explicit owner approval
   - "Fri 16:00-Mon 08:00"
@@ -75,5 +85,15 @@ review:
   Plannotator is installed). With `confirm: always` every review goes
   through it. Falls back to the terminal if Plannotator isn't installed. It's a personal
   preference, so it can also go in `~/.config/keel/voice.md` as `ui: plannotator`.
+- **usage** turns "this endpoint is probably used" into "12,000 calls last week, 18% from
+  app 2.3". keel finds the targets (routes, tables, columns, functions) in the plan or
+  diff, runs each source with `KEEL_TARGET` / `KEEL_TARGET_KIND` set, and reads lines like
+  `{"metric":"calls_7d","value":12000,"label":"calls/7d","detail":"app 2.3 = 18%"}`.
+  Templates for PostHog, Sentry, Postgres/Supabase and access logs are in
+  `references/usage-sources/`. The commands are code from the repo, so each person trusts
+  them once (and again whenever they change); `KEEL_USAGE_TRUST=1` in CI. Credentials go in
+  env vars, never here.
+- **hooks** only take effect for people who installed them (`install_hooks.sh`). A change
+  counts as checked when keel-check ran on exactly that content, committed or not.
 - The voice profile is personal and lives outside the repo: `~/.config/keel/voice.md`.
 - Unknown keys are ignored, so teams can add their own.

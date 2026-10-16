@@ -1,0 +1,12 @@
+{
+  "description": "keel: one-line nudge when the agent finishes a HIGH/CRITICAL change that keel-check hasn't seen",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/shared/hooks/claude-stop.sh\"", "timeout": 30 }
+        ]
+      }
+    ]
+  }
+}

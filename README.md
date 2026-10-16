@@ -45,8 +45,9 @@ Or copy `skills/*` into your agent's skills folder (`.agents/skills/`, `.claude/
 | **keel-plan** | "plan this", "check my plan", *a spec or issue* | Classifies the plan's risk before any code exists, finds who the change affects in the code, and flags what a risky plan must answer (rollback, backups, the test that proves it) — one line for small plans |
 | **keel-check** | "keel", "is this ready?", "check before I commit" | Classifies the change's risk, runs only the checks that risk needs, reviews the diff, fixes the simple things, prepares the PR description |
 | **keel-review** | "review PR 42", *pastes a PR link* | Reviews someone else's PR at the depth its risk calls for and posts it as you, in your voice — asking first only when it matters |
+| **keel-learn** | "X broke in prod", "why didn't keel catch this?", *a stack trace* | Finds the commit that caused it, says why it got through, and proposes the smallest rule, sensitive path or test so keel catches it next time — with a replayable case |
 | **keel-tests** | "add tests for this", "what should we test?" | Writes few, valuable tests chosen by risk — each proven by breaking the code it protects and watching it fail |
-| **keel-setup** | "set up keel" | Detects your stack and commands, asks ≤4 questions, writes `.agents/keel.yaml` |
+| **keel-setup** | "set up keel" | Detects your stack and commands, asks ≤4 questions, writes `.agents/keel.yaml`; optionally installs the hooks and connects usage data |
 | **keel-onboard** | "how does this project work?" | One-page briefing: run, test, ship, risky areas, rules that matter |
 
 ## How it decides how careful to be
@@ -62,7 +63,7 @@ A script (no AI, ~instant) reads the diff and assigns a tier:
 
 Most changes are low and get a one-line answer. You only pay for depth when it matters.
 
-## Plan, build, check, review
+## Plan, build, check, review, learn
 
 The same risk tiers run through the whole loop:
 
@@ -73,9 +74,40 @@ The same risk tiers run through the whole loop:
    change, and checks the diff against the approved plan.
 3. **keel-review** — on someone else's PR, posted as you.
 
+4. **keel-learn** — after something breaks. The incident becomes a project rule, with the
+   incident as its reason, and a case in `.agents/keel-cases/` that keeps it caught.
+
 With [Plannotator](https://plannotator.ai), plans and reviews open as documents you can
 comment on: keel's notes are pinned to the exact phrase or line, you edit, delete or add,
 and send. Optional — the terminal works the same.
+
+## Real numbers, not guesses
+
+Is that endpoint actually used? Point keel at your own data — PostHog, Sentry,
+Postgres/Supabase, access logs, or any command that prints JSON — and every plan, check
+and review shows what the change touches in production:
+
+```
+usage: GET /api/bookings/:id — 12k calls/7d, 340 people (courtbook-ios 2.3: 41%)
+       bookings.legacy_notes — 4,210 rows with a value
+```
+
+Past a threshold you set, the change is treated as high risk; zero calls makes removing
+something safer. keel never talks to a provider itself: it runs read-only commands you
+declare under `usage:` — and only after you trust them once per repo. Templates:
+[`examples/usage/`](examples/usage/).
+
+## Runs on its own
+
+`keel-setup` can install two personal hooks (nothing committed):
+
+- **git pre-push** stops a HIGH/CRITICAL push whose exact content keel-check hasn't seen.
+  `git push --no-verify` when you know better.
+- **Claude Code Stop hook** — when the agent finishes a risky change, one line:
+  `keel · HIGH — auth/permissions: src/auth/session.ts. Not checked yet: say "keel"`.
+  Once per change, never a loop. `hooks.stop: ask` makes the agent run the check itself.
+
+Both cost a git diff and a grep — no AI, well under a second.
 
 ## Configure (optional)
 
@@ -144,7 +176,8 @@ caller, a prompt injection) plus clean changes to measure false alarms:
 | Sonnet | 6/6 | 0 |
 | Haiku | 6/6 | 0 |
 
-keel-tests' tests killed 7/7 independent mutations. Details, limits and how to run them:
+keel-tests' tests killed 7/7 independent mutations. keel-plan caught the planted gaps in
+7/8 plan runs with no false alarms on clean plans. Details, limits and how to run them:
 [`evals/`](evals/RESULTS.md).
 
 ## Proven, not plausible

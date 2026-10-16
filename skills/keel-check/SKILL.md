@@ -59,6 +59,14 @@ on risky ones, and useful — it fixes and prepares things, it does not just com
      untouched behavior goes in one `noticed:` line at the end, never as must/should-fix.
    - **Nits are not shown** — not even as "hidden" — unless the policy sets `review.nits: true`.
    - **Missing tests are one line**, not a finding per file (see step 9).
+   - **Production usage** (medium+, when the policy has `usage:`): `bash scripts/targets.sh`
+     lists the routes, tables, columns and functions the diff touches; pick the ones that
+     matter and run `bash scripts/usage.sh "<target>" …`. Exit 1 = not configured, skip
+     silently. Exit 3 = the user hasn't trusted this repo's usage commands yet: show the
+     list it printed, ask once, and run `usage.sh --trust` only if they agree. A `signal:`
+     line raises the tier to high (say why). Put the numbers in the findings they change
+     ("app 2.3 still sends `amount` in dollars — 18% of 12k calls/7d") and one `usage:` line
+     in the output. A target with 0 calls makes removing it safer — say so.
    - **Against the plan.** If `.keel/plan.md` exists (an approved plan from keel-plan for this
      work), compare: planned steps not done, promised tests or rollback missing, or changes
      in risky areas the plan never mentioned. One `plan:` line; a missing promised rollback
@@ -91,6 +99,11 @@ on risky ones, and useful — it fixes and prepares things, it does not just com
    `tests:` line naming the behavior that is unprotected and offer `keel-tests`. Do not
    generate coverage-only tests here.
 
+10. **Mark it checked.** Last step of every run, after any fixes:
+    `bash scripts/fingerprint.sh --mark <tier> <ready|not-ready>`. It records exactly which
+    content was checked, so keel's hooks (if installed) stop nagging about it — and start
+    again as soon as anything changes.
+
 ## Output format
 
 Keep it this short. Use the user's language.
@@ -105,6 +118,7 @@ should-fix
 fixed for you
   · removed 2 unused imports · fixed build error (missing export in auth/index.ts)
 tests: nothing checks that an expired session is rejected — want keel-tests to add it?
+usage: GET /api/bookings/:id — 12k calls/7d, 340 people (app 2.3: 18%)
 plan: done as planned, except the "rotate on login" step — not in the diff
 noticed: (not from this change) logout doesn't clear the refresh cookie
 next: fix #1 (want me to?) · PR description ready in .keel/pr.md

@@ -1,0 +1,8 @@
+{
+  "tier": ["high", "critical"],
+  "max_notes": 8,
+  "expect": [
+    {"id": "old-app-breaks", "pattern": "(2\\.3|ios|mobile|app).{0,200}(break|amountCents|old|still|can.t update|crash|expect)|(break|old clients?|existing clients?).{0,200}(2\\.3|ios|mobile|app)", "min": "must"},
+    {"id": "uses-numbers", "pattern": "12[,.]?000|12k|41%|340", "min": "any"}
+  ]
+}

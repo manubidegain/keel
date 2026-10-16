@@ -23,6 +23,14 @@ for s in keel-check keel-review keel-tests; do
   for f in detect.sh prove.sh slop.sh; do copy "shared/$f" "skills/$s/scripts/$f"; done
 done
 for f in risk.sh plan_risk.sh; do copy "shared/$f" "skills/keel-plan/scripts/$f"; done
+for f in examples/usage/*; do [ -f "$f" ] || continue; copy "$f" "skills/keel-setup/references/usage-sources/$(basename "$f")"; done
+for f in install_hooks.sh fingerprint.sh usage.sh; do copy "shared/$f" "skills/keel-setup/scripts/$f"; done
+for f in claude-stop.sh pre-push; do copy "shared/hooks/$f" "skills/keel-setup/scripts/$f"; done
+copy shared/fingerprint.sh skills/keel-check/scripts/fingerprint.sh
+for f in risk.sh find_culprit.sh replay.sh; do copy "shared/$f" "skills/keel-learn/scripts/$f"; done
+for s in keel-plan keel-check keel-review; do
+  for f in usage.sh targets.sh; do copy "shared/$f" "skills/$s/scripts/$f"; done
+done
 copy shared/run.sh skills/keel-tests/scripts/run.sh
 copy shared/detect.sh skills/keel-onboard/scripts/detect.sh
 
@@ -35,5 +43,5 @@ for f in skills/keel-check/references/standards/*.md; do
   copy "$f" "skills/keel-plan/references/standards/$(basename "$f")"
 done
 
-[ $check -eq 0 ] && chmod +x skills/*/scripts/*.sh shared/*.sh && echo "synced"
+[ $check -eq 0 ] && chmod +x skills/*/scripts/*.sh skills/keel-setup/scripts/pre-push shared/*.sh shared/hooks/* && echo "synced"
 exit $drift

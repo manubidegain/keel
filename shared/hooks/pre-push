@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# keel · git pre-push hook. Stops a push of a HIGH/CRITICAL change that hasn't been through
+# keel-check (exactly that content). Bypass once: git push --no-verify, or KEEL_SKIP=1.
+# Policy (.agents/keel.yaml):  hooks: { pre_push: high }   # off | high | critical
+here="$(cd "$(dirname "$0")" && pwd)"
+[ "${KEEL_SKIP:-0}" = 1 ] && exit 0
+cd "$(git rev-parse --show-toplevel)" || exit 0
+at=$(awk '/^hooks:/{on=1;next} /^[^[:space:]#]/{on=0} on && /^[[:space:]]+pre_push:/{print $2; exit}' .agents/keel.yaml 2>/dev/null)
+at=${at:-high}
+case "$at" in off) exit 0 ;; critical) min=3 ;; *) min=2 ;; esac
+risk="$here/risk.sh"; fp="$here/fingerprint.sh"
+[ -f "$risk" ] || risk="$here/../risk.sh"; [ -f "$fp" ] || fp="$here/../fingerprint.sh"
+[ -f "$risk" ] || exit 0
+
+zero=0000000000000000000000000000000000000000
+status=0
+tmp="$(mktemp 2>/dev/null || mktemp -t keel)"
+while read -r lref lsha rref rsha; do
+  [ -z "$lsha" ] && continue
+  case "$lsha" in "$zero"|0000000*) continue ;; esac          # deleting a branch
+  base=""
+  if [ "$rsha" != "$zero" ] && git cat-file -e "$rsha" 2>/dev/null; then base="$rsha"
+  else
+    for b in origin/HEAD origin/main origin/master main master; do
+      git rev-parse -q --verify "$b" >/dev/null && { base=$(git merge-base "$lsha" "$b" 2>/dev/null); break; }
+    done
+  fi
+  [ -n "$base" ] || continue
+  git diff --no-color "$base" "$lsha" > "$tmp"
+  out=$(bash "$risk" --diff-file "$tmp" 2>/dev/null) || continue
+  tier=$(printf '%s\n' "$out" | awk '/^tier:/{print $2}')
+  case "$tier" in high) lvl=2 ;; critical) lvl=3 ;; *) lvl=0 ;; esac
+  [ "$lvl" -ge "$min" ] || continue
+  bash "$fp" --is-checked --rev "$lsha" 2>/dev/null && continue
+  {
+    echo "keel · $(printf '%s' "$tier" | tr '[:lower:]' '[:upper:]') — ${lref#refs/heads/} → ${rref#refs/heads/}"
+    printf '%s\n' "$out" | sed -n 's/^  - /  · /p' | head -3
+    echo "Not checked by keel yet (or changed since). Ask your agent \"keel\" first,"
+    echo "or push anyway: git push --no-verify"
+  } >&2
+  status=1
+done
+rm -f "$tmp"
+exit $status

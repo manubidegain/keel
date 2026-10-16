@@ -53,9 +53,20 @@ fixture, unchanged — nothing is built, only the plan is judged.
 | p2-admin-cancel | "refund like normal" credits the *caller*, so the admin gets the money; no admin role exists | high |
 | p3-contacts | copy + DROP in one migration, no backup; the email column was `unique`; "no tests needed" | critical |
 | p4-peak-hours | none — clean plan with edges, rollback and impact | medium, no "must" |
+| p5-usage-contract | dollars instead of `amountCents` on an endpoint; a usage source shows 41% of 12k calls/7d come from an iOS app that can't be updated server-side (`setup.sh` adds and trusts the source) | high, using the numbers |
 
 Run each with `evals/plan_prompt.md` (fill `{REPO}`, `{REQUEST}`, `{PLAN}`, `{SKILLS}`, `{OUT}`,
 `{NAME}`), then `python3 evals/grade_plan.py <results_dir>`.
+
+## Incidents (keel-learn)
+
+`learn/<name>/build.sh <fixture> <out>` builds a repo whose history hides the cause;
+`incident` is what the developer says. Run with `evals/learn_prompt.md`, then
+`python3 evals/grade_learn.py <results_dir> <repos_dir>`.
+
+| Case | Hidden cause | Expected |
+|---|---|---|
+| l1-double-refund | a "refactor" (#21) drops the already-cancelled guard added in #18; a later unrelated commit is a decoy | culprit #21, a regression test and a rule or case proposed, nothing written without approval, no author named |
 
 ## Results — 2026-10-16
 

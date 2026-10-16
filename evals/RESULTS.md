@@ -94,3 +94,25 @@ found what the plan didn't say but the code did: `cancel()` credits the caller, 
 the repo reads `users.email`, `priceFor` has one caller that stores the price at booking
 time. 5–9 tool calls per plan. After this run the medium cap went from 5 to 3 notes, and a
 low-tier plan that doesn't do what was asked now gets one extra line instead of silence.
+
+## Usage data and keel-learn (Opus and Haiku)
+
+**p5 — usage-aware plan.** A "small cleanup" switches an endpoint from `amountCents` to dollars.
+The code alone can't say who calls it; the usage source says 12k calls/7d, 41% from an iOS
+app. Both models: tier high (the threshold signal), **must**: "removing amountCents breaks
+courtbook-ios 2.3 (41% of traffic, can't be updated server-side) — add `price` next to it",
+with the numbers written into the plan. Opus also noticed the API returns cents everywhere
+else, contradicting "like the rest of the API". 2/2 passed.
+
+**l1 — incident.** "Users got refunded twice since Thursday, nothing changed in payments."
+Both models found the culprit (#21, a refactor that silently dropped the guard added in #18,
+past a decoy commit), reproduced it on HEAD (two cancels → double credit), and diagnosed
+*tier too low*: the refund logic lives in `src/bookings.js`, so keel had rated #21 medium.
+Both proposed a narrow `sensitive:` path — Opus verified it moves #21 to high — a
+regression test that fails on #21, and a replayable case; nothing written without approval,
+no author named. Haiku declined to add a payments rule that would duplicate a base standard,
+as the skill asks. 2/2 passed.
+
+`usage.sh`, `targets.sh`, the hooks and `find_culprit.sh`/`replay.sh` have their own tests
+(`tests/`). The Postgres template was checked against a real local Postgres; PostHog and
+Sentry against a stub server — not against the live services.

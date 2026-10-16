@@ -86,7 +86,7 @@ $(yaml_list sensitive)"
 $(yaml_list relaxed)"
   freeze="$freeze
 $(yaml_list freeze)"
-  [ -z "$data" ] && data=$(awk '/^[[:space:]]*data:/{sub(/^[^:]*:[[:space:]]*/,""); print; exit}' "$1")
+  [ -z "$data" ] && data=$(awk '/^project:/{on=1;next} /^[^[:space:]#]/{on=0} on && /^[[:space:]]+data:/{sub(/^[^:]*:[[:space:]]*/,""); print; exit}' "$1")
   return 0
 }
 if [ -n "$policy" ] && [ -f "$policy" ]; then
