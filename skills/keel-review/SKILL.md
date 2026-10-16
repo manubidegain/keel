@@ -10,6 +10,15 @@ explaining the consequence and suggesting the fix — written so it reads as the
 
 Read `references/voice.md` before drafting anything that will be posted.
 
+## Options
+
+Flags after the PR (`/keel-review 42 --plannotator`), or the same thing said in words:
+- `--plannotator` (also `-p`, `--ui`, "en plannotator", "show it on the diff") — open the
+  draft in Plannotator before posting, whatever the policy says (step 6, visual review).
+- `--terminal` — never open Plannotator this time, even if the policy sets `review.ui`.
+- `--dry-run` — draft only, post nothing.
+A flag wins over `.agents/keel.yaml` for this run only; it's never written anywhere.
+
 ## Steps
 
 1. **Fetch.** From the repo root (or anywhere with `--repo owner/name`):
@@ -90,8 +99,9 @@ Read `references/voice.md` before drafting anything that will be posted.
    `never` = always post directly, still never `REQUEST_CHANGES`/`APPROVE` without the
    user's word. **Unattended (CI):** post `event: COMMENT` only.
 
-   **Visual review (optional).** If the policy says `review.ui: plannotator` (or the voice profile has `ui: plannotator`), or the user
-   asks to see the review on the diff, and `plannotator` is installed, do the "ask first"
+   **Visual review (optional).** If the user passed `--plannotator` (see Options), or the
+   policy says `review.ui: plannotator` (or the voice profile has `ui: plannotator`) and
+   they didn't pass `--terminal`, and `plannotator` is installed, do the "ask first"
    above in [Plannotator](https://plannotator.ai) instead of the terminal:
    1. `bash scripts/review_ui.sh open .keel/pr-<n>/review.txt --pr <PR url>` — prints a
       `url:`; give it to the user in one line, in their language (the comments are on the
@@ -107,7 +117,8 @@ Read `references/voice.md` before drafting anything that will be posted.
       posted from Plannotator themselves; report the link and post nothing. Otherwise nothing
       is posted. Exit 6 (every comment removed): ask what they want.
    4. Compare `final.txt` with the draft for step 8.
-   Never use it unattended (nobody to click).
+   Never use it unattended (nobody to click). With `--plannotator` it opens even when the
+   rules above would post directly — the user asked to see it.
 
 7. **Re-reviews.** `previous_inline.tsv` lists what the user already said on this PR.
    Don't repeat it; say which earlier points are resolved and comment only on new problems.

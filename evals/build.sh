@@ -18,7 +18,9 @@ for s in "$here"/scenarios/*/; do
     # secret-shaped test data is generated here, never stored in the repo (keeps secret
     # scanners like GitHub push protection quiet): a random fake Stripe live key
     if grep -rlq '__FAKE_STRIPE_LIVE_KEY__' . 2>/dev/null; then
-      fake="sk_""live_$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 34)"
+      # finite input on purpose: BSD tr never stops reading /dev/urandom when SIGPIPE is
+      # ignored (as on CI runners), which hangs the build
+      fake="sk_""live_$(head -c 4096 /dev/urandom | LC_ALL=C tr -dc 'A-Za-z0-9' | cut -c1-34)"
       grep -rl '__FAKE_STRIPE_LIVE_KEY__' . | while IFS= read -r f; do
         sed "s/__FAKE_STRIPE_LIVE_KEY__/$fake/" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
       done

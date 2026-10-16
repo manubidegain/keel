@@ -15,6 +15,12 @@ instead of a refactor. Fast on small plans, thorough on risky ones.
   whether tests exist. Look it up and put the answer in the plan.
 - Questions only for what needs the user's judgment, at most 3.
 
+## Options
+
+`/keel-plan --plannotator` (also `-p`, `--ui`, "en plannotator") opens the plan in
+Plannotator at step 6 even for a medium plan; `--terminal` keeps it in the terminal even for
+high/critical. A flag applies to this run only and wins over the policy.
+
 ## Steps
 
 1. **Get the plan into `.keel/plan.md`.**
@@ -71,9 +77,9 @@ instead of a refactor. Fast on small plans, thorough on risky ones.
    Medium: ≤ 3 notes. High/critical: ≤ 8. One note per root cause.
 
 6. **Show it.**
-   - **Plannotator** (when `review.ui: plannotator` is set in the policy or the voice
-     profile, the user asks to see it, or the plan is high/critical and `plannotator` is
-     installed): `bash scripts/plan_ui.sh open .keel/plan.md .keel/plan-notes.txt`, give the
+   - **Plannotator** (when the user passed `--plannotator`, or — unless they passed
+     `--terminal` — `review.ui: plannotator` is set in the policy or the voice profile, or
+     the plan is high/critical; and `plannotator` is installed): `bash scripts/plan_ui.sh open .keel/plan.md .keel/plan-notes.txt`, give the
      `url:` in one line, then `bash scripts/plan_ui.sh wait .keel/plan-ui/result.json`
      (exit 4 = still open; wait again). Exit 3 from `open` = not installed → terminal.
    - **Terminal** otherwise, in the output format below.

@@ -148,8 +148,9 @@ It asks before posting only when it matters: approving or requesting changes, se
 findings on public repos, critical PRs, outside contributors, or long reviews
 (`review.confirm: auto`, also `always` / `never`). Everything else is posted and linked.
 
-Prefer to see it on the diff first? With Plannotator installed and
-`review.ui: plannotator` in your policy, keel opens its draft there with every comment
+Prefer to see it on the diff first? With Plannotator installed, run
+`/keel-review 42 --plannotator` (or set `review.ui: plannotator` to make it the default) and
+keel opens its draft there with every comment
 already on its line. Edit, delete or add comments, hit "Send Feedback", and keel posts
 exactly what you left — or post straight from Plannotator. Without it, everything stays in
 the terminal.
