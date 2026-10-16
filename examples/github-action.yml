@@ -1,8 +1,13 @@
 # keel automatic PR review — copy to .github/workflows/keel-review.yml
 #
 # Reviews every PR with keel-review and posts one review (summary + inline comments).
-# Needs an ANTHROPIC_API_KEY repository secret. GitHub does not expose secrets to
-# workflows triggered by PRs from forks, so fork PRs are skipped by default.
+# Secrets:
+#   ANTHROPIC_API_KEY  for the agent
+#   KEEL_GH_TOKEN      a fine-grained token of the reviewer (Pull requests: read & write on
+#                      this repo). Reviews then appear under that person's name. Without it
+#                      the default token is used and reviews show as github-actions[bot].
+#   KEEL_VOICE         optional: contents of the reviewer's ~/.config/keel/voice.md
+# GitHub does not expose secrets to PRs from forks, so fork PRs are skipped.
 name: keel review
 on:
   pull_request:
@@ -26,6 +31,11 @@ jobs:
           git clone --depth 1 https://github.com/manubidegain/keel "$RUNNER_TEMP/keel"
           mkdir -p .claude/skills
           cp -R "$RUNNER_TEMP"/keel/skills/* .claude/skills/
+          mkdir -p ~/.config/keel
+          printf '%s' "$KEEL_VOICE" > ~/.config/keel/voice.md
+          [ -s ~/.config/keel/voice.md ] || rm ~/.config/keel/voice.md
+        env:
+          KEEL_VOICE: ${{ secrets.KEEL_VOICE }}
 
       - uses: anthropics/claude-code-action@v1
         with:
@@ -36,9 +46,10 @@ jobs:
 
             Use the keel-review skill to review this pull request.
             This is an unattended CI run: there is no person to confirm, so after drafting
-            the review, post it with post_review.sh using `event: COMMENT`.
+            the review, post it with post_review.sh using `event: COMMENT`. Write it in the
+            reviewer's voice (~/.config/keel/voice.md if present). Add no attribution.
             Do not run the project's code or tests. Do not post anything else.
           claude_args: |
             --allowedTools "Read,Grep,Glob,Write,Bash(bash .claude/skills/keel-review/scripts/*),Bash(git diff:*),Bash(git log:*),Bash(gh api:*)"
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.KEEL_GH_TOKEN || github.token }}

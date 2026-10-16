@@ -1,0 +1,28 @@
+{
+  "tier": [
+    "high",
+    "critical"
+  ],
+  "expect": [
+    {
+      "id": "no-expiry-check",
+      "file": "src/auth/session.js",
+      "pattern": "exp(ir|\\b)|ttl|never expire|forever",
+      "min": "must-fix"
+    },
+    {
+      "id": "secret-undefined",
+      "file": "src/auth/session.js",
+      "pattern": "SESSION_SECRET|undefined|missing secret|unset",
+      "min": "should-fix",
+      "optional": true
+    },
+    {
+      "id": "no-tests",
+      "file": "",
+      "pattern": "\\btests?\\b",
+      "min": "should-fix",
+      "optional": true
+    }
+  ]
+}

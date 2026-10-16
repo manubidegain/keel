@@ -48,9 +48,11 @@ standards:                 # extra standard files (project or org), read in addi
   - .agents/standards/api.md
 
 review:
+  confirm: auto            # always | auto | never — when to ask before posting (see keel-review)
   language: auto           # language for PR comments; auto = the PR's language
   max_comments: 15         # cap inline comments per review; the rest go in the summary
   nits: false              # post nits at all?
+  signature: ""            # appended to review summaries only if set, e.g. "— Manu"
 ```
 
 ## Field notes
@@ -63,4 +65,7 @@ review:
   itself a finding for high-risk changes.
 - **relaxed** exists to keep false positives down. Use it the moment keel flags generated
   or vendored code.
+- **review.confirm: auto** asks before approving/requesting changes, security findings on
+  public repos, critical PRs, outside contributors and big reviews; posts the rest directly.
+- The voice profile is personal and lives outside the repo: `~/.config/keel/voice.md`.
 - Unknown keys are ignored, so teams can add their own.

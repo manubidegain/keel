@@ -30,7 +30,8 @@ on risky ones, and useful — it fixes and prepares things, it does not just com
    - Freeze: if the current local time is inside a `freeze:` window and the tier is high,
      treat it as critical.
    - `references/tiers.md` — required checks, review depth, iteration budget.
-   - Standards: for low tier skip them. Otherwise read only the files in
+   - Standards: for low tier skip them. Otherwise read `references/standards/contribution.md`
+     (proven work — applies to every medium+ change) and only the other files in
      `references/standards/` that match the reasons (auth/secrets → `security.md`,
      migrations → `data.md`, tests missing → `testing.md`, CI/infra → `release.md`, any code →
      `code.md`), plus project/org standards listed under `standards:` in the policy.
@@ -38,29 +39,53 @@ on risky ones, and useful — it fixes and prepares things, it does not just com
 
 3. **Run checks** for the tier: `bash scripts/run.sh test lint typecheck …`. It prints
    ✓/✗ per check and the tail of failures; full logs are in `.keel/logs/`. Don't re-run
-   passing checks in later iterations.
+   passing checks in later passes. Also, cheap and mechanical:
+   - `bash scripts/slop.sh` — type escapes, suppressions, debug output, untracked TODOs,
+     focused/skipped tests in the added lines. Each hit is a finding (should-fix; a
+     focused test or a cast that hides a real type error is must-fix). Fix the trivial ones.
+   - Medium+ with code changes: `bash scripts/prove.sh` — runs the tests with the change
+     reverted in a throwaway worktree. `PROVEN` = the tests catch it. `NOT PROVEN` = they
+     pass without the change: the change is untested (should-fix; must-fix on high).
+     `INCONCLUSIVE` for new files = use keel-tests' mutation check. Never block on
+     INCONCLUSIVE alone.
 
 4. **Review the diff** at the depth the tier requires. Look for real problems only: bugs,
    security, data integrity, error handling, breaking changes, missing tests on risky paths,
    standards violations. For high/critical, also read the callers of changed functions.
    Classify each finding as must-fix / should-fix / nit (definitions in `tiers.md`).
+   Keep the list signal-only:
+   - **One finding per root cause.** "DROP COLUMN" and "no rollback for that DROP" are one finding.
+   - **Only what this change introduced or made worse.** A problem that already existed in
+     untouched behavior goes in one `noticed:` line at the end, never as must/should-fix.
+   - **Nits are not shown** — not even as "hidden" — unless the policy sets `review.nits: true`.
+   - **Missing tests are one line**, not a finding per file (see step 9).
 
 5. **Fix what is safe to fix** without asking: failing lint/format, unused imports, obvious
    typos, a missing `await`, a test that fails because of a trivial mismatch you can prove.
    Ask before anything that changes behavior, deletes code, or touches a sensitive area.
    Never weaken or delete a test to make it pass.
 
-6. **Iterate** within the tier's budget: re-run only failed checks, re-review only what
-   changed. Stop when the tier's "iterate until" is met, or the budget is spent (then ask).
+6. **Review again until clean.** For medium+, repeat the review of the whole change with
+   fresh eyes after each round of fixes, until two consecutive passes find nothing new or
+   four passes are done (`tiers.md`). Low: one pass. Count passes in the output.
 
-7. **Prepare the PR** when the result is ready to ship: write `.keel/pr.md` with a title,
-   what changed and why (from the diff and the conversation, never invented), the risk tier
-   and why, how it was tested, and — for high/critical — the rollback plan. Offer to open
-   the PR if a GitHub CLI or connector is available; don't open it unasked.
+7. **Ready check.** For medium+, answer the questions in `contribution.md` §4 with evidence
+   (what you ran and saw). Any "no" or "not sure" → not ready: say which and what would
+   settle it. Don't claim something was seen working unless it was actually run in this
+   session or the user said so.
 
-8. **Tests.** If the tier is ≥ medium and risky code changed without tests, say which
-   behavior is unprotected in one line and offer `keel-tests`. Do not generate coverage-only
-   tests here.
+8. **Prepare the PR** when the result is ready to ship: write `.keel/pr.md` with a title,
+   what changed and why (from the diff and the conversation, never invented), an
+   **Evidence** section (commands run and their result, the prove.sh result, edges covered,
+   what was run by hand and what it showed), and — for high/critical — the rollback plan. Write it as the user, in their voice
+   (`references/voice.md`): first person, no mention of keel or AI, no attribution lines,
+   no risk-tier jargon unless the team uses it. Offer to open the PR with `gh pr create`
+   (their own auth, so it's under their name); don't open it unasked. Commits keel makes use
+   the repo's configured git identity — never set a different author.
+
+9. **Tests.** If the tier is ≥ medium and risky code changed without tests, add one
+   `tests:` line naming the behavior that is unprotected and offer `keel-tests`. Do not
+   generate coverage-only tests here.
 
 ## Output format
 
@@ -68,15 +93,19 @@ Keep it this short. Use the user's language.
 
 ```
 keel · HIGH — touches src/auth/session.ts, adds a migration
-✓ test  ✓ lint  ✓ typecheck  ✗ build
+✓ test  ✓ lint  ✓ typecheck  ✗ build  ✓ proven (tests fail without the change)  · 2 passes
 must-fix
   1. session.ts:42 — refresh token never expires; a stolen token works forever
 should-fix
   2. 004_add_index.sql — CREATE INDEX without CONCURRENTLY locks the table on big tables
 fixed for you
   · removed 2 unused imports · fixed build error (missing export in auth/index.ts)
+tests: nothing checks that an expired session is rejected — want keel-tests to add it?
+noticed: (not from this change) logout doesn't clear the refresh cookie
 next: fix #1 (want me to?) · PR description ready in .keel/pr.md
 ```
+
+Omit any section that would be empty (no "must-fix: none").
 
 When everything passes on a low tier: `keel · LOW — docs only. ✓ Ready.` and nothing more.
 

@@ -25,8 +25,14 @@ new_repo; mkdir -p src/auth; echo 'x' > src/auth/login.ts; expect "auth path" hi
 new_repo; mkdir -p app/payments; echo 'x' > app/payments/charge.py; expect "payments path" high
 new_repo; mkdir -p supabase/migrations; echo 'create table t(id int);' > supabase/migrations/001.sql; expect "additive migration" high
 new_repo; mkdir -p db/migrate; echo 'ALTER TABLE users DROP COLUMN email;' > db/migrate/002.sql; expect "destructive migration" critical
-new_repo; echo 'const k = "sk_live_abcdefghijklmnop1234"' >> src/index.ts; expect "live secret" critical
-new_repo; echo 'const k = process.env.STRIPE_KEY' >> src/index.ts; expect "env reference is not a secret" low
+# fake key assembled at runtime so the repo itself never contains a secret-shaped string
+fake_key="sk_""live_""A1b2C3d4E5f6G7h8J9k0L1m2"
+new_repo; echo "const k = \"$fake_key\"" >> src/index.ts; expect "live secret" critical
+new_repo; echo 'const k = process.env.STRIPE_KEY' >> src/index.ts; expect "env reference is not a secret (payments → medium)" medium
+new_repo; echo 'const u = process.env.API_URL' >> src/index.ts; expect "plain env reference" low
+new_repo; printf '// price and refund helpers live elsewhere\nexport const z = 0\n' >> src/index.ts; expect "money words in comments only" low
+new_repo; mkdir -p src/db; echo 'const r = await db.query(`SELECT * FROM t WHERE name = '"'"'${q}'"'"'`)' > src/db/find.js; expect "SQL built from template string" high
+new_repo; mkdir -p src/x; echo 'export const refund = (u, c) => credit(u, c)' > src/x/a.js; expect "money logic outside payments path" medium
 new_repo; mkdir -p .github/workflows; echo 'on: push' > .github/workflows/ci.yml; expect "CI workflow" high
 new_repo; echo '{"dependencies":{"left-pad":"1.0.0"}}' > package.json; expect "dependency manifest" medium
 new_repo; for i in $(seq 1 60); do echo "export const v$i = $i"; done > src/big.ts; expect "code without tests" medium
@@ -36,6 +42,15 @@ new_repo; mkdir -p src/generated/auth .agents; printf 'relaxed:\n  - "src/genera
   echo x > src/generated/auth/a.ts; expect "relaxed glob wins" low
 new_repo; mkdir -p src/jobs .agents; printf 'project:\n  data: [personal]\n' > .agents/keel.yaml; git add -A; git commit -qm p
   echo x > src/jobs/send.ts; expect "side effects in sensitive-data project" high
+
+new_repo; mkdir -p src/auth .agents; printf 'freeze:\n  - "Fri 16:00-Mon 08:00"\n' > .agents/keel.yaml; git add -A; git commit -qm p
+  echo x > src/auth/a.ts; KEEL_NOW="Sat 10:00" expect "high change inside freeze" critical
+new_repo; mkdir -p src/auth .agents; printf 'freeze:\n  - "Fri 16:00-Mon 08:00"\n' > .agents/keel.yaml; git add -A; git commit -qm p
+  echo x > src/auth/a.ts; KEEL_NOW="Wed 10:00" expect "high change outside freeze" high
+new_repo; mkdir -p src/docs .agents; printf 'freeze:\n  - "Fri 16:00-Mon 08:00"\n' > .agents/keel.yaml; git add -A; git commit -qm p
+  echo x > src/docs/a.md; KEEL_NOW="Sat 10:00" expect "low change during freeze stays low" low
+new_repo; mkdir -p src/ledger .agents; printf 'sensitive:\n  - "src/ledger/**"\n' > .agents/org.yaml; printf 'extends: org.yaml\n' > .agents/keel.yaml; git add -A; git commit -qm p
+  echo x > src/ledger/a.ts; expect "sensitive glob inherited via extends" high
 
 echo "---"; echo "$pass passed, $fail failed"
 [ "$fail" -eq 0 ]

@@ -17,8 +17,15 @@ jobs:
       - uses: actions/checkout@v6
       - name: Skill copies are in sync with shared/
         run: bash scripts/sync.sh --check
-      - name: Risk classifier tests
-        run: bash tests/risk.test.sh
+      - name: Script tests
+        run: |
+          bash tests/risk.test.sh
+          bash tests/slop.test.sh
+          bash tests/prove.test.sh
+      - name: Eval fixtures build and their tests pass
+        run: |
+          bash evals/build.sh "$RUNNER_TEMP/evals"
+          for d in "$RUNNER_TEMP"/evals/*/; do (cd "$d" && node --test >/dev/null) || { echo "fixture tests fail: $d"; exit 1; }; done
       - name: Shellcheck
         if: runner.os == 'Linux'
-        run: shellcheck -S warning shared/*.sh skills/keel-review/scripts/*.sh scripts/*.sh tests/*.sh
+        run: shellcheck -S warning shared/*.sh skills/keel-review/scripts/*.sh scripts/*.sh tests/*.sh evals/*.sh

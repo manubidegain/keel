@@ -1,0 +1,20 @@
+{
+  "tier": [
+    "critical"
+  ],
+  "expect": [
+    {
+      "id": "irreversible-drop",
+      "file": "migrations/003_move_email_to_contacts.sql",
+      "pattern": "drop|irreversib|rollback|backup|expand|revert|data loss",
+      "min": "must-fix"
+    },
+    {
+      "id": "code-still-uses-email",
+      "file": "",
+      "pattern": "email",
+      "min": "should-fix",
+      "optional": true
+    }
+  ]
+}

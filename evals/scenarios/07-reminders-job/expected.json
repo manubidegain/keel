@@ -1,0 +1,28 @@
+{
+  "tier": [
+    "medium",
+    "high"
+  ],
+  "expect": [
+    {
+      "id": "swallowed-error",
+      "file": "src/jobs/reminders.js",
+      "pattern": "swallow|empty catch|catch|silent|ignor",
+      "min": "should-fix"
+    },
+    {
+      "id": "n-plus-one",
+      "file": "src/jobs/reminders.js",
+      "pattern": "n\\+1|per booking|each booking|in a loop|inside the loop|batch|query per",
+      "min": "should-fix",
+      "optional": true
+    },
+    {
+      "id": "duplicate-sends",
+      "file": "src/jobs/reminders.js",
+      "pattern": "duplicat|twice|again|idempot|already|remind.*sent|every 15",
+      "min": "should-fix",
+      "optional": true
+    }
+  ]
+}

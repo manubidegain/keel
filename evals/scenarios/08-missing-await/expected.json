@@ -1,0 +1,21 @@
+{
+  "tier": [
+    "medium",
+    "high"
+  ],
+  "expect": [
+    {
+      "id": "missing-await",
+      "file": "src/bookings.js",
+      "pattern": "await",
+      "min": "must-fix"
+    },
+    {
+      "id": "double-refund",
+      "file": "src/bookings.js",
+      "pattern": "already cancel|twice|double|again|status",
+      "min": "should-fix",
+      "optional": true
+    }
+  ]
+}

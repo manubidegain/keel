@@ -1,0 +1,20 @@
+{
+  "tier": [
+    "critical"
+  ],
+  "expect": [
+    {
+      "id": "secret",
+      "file": "src/payments/stripe.js",
+      "pattern": "secret|key|rotat|credential",
+      "min": "must-fix"
+    },
+    {
+      "id": "no-error-handling",
+      "file": "src/payments/stripe.js",
+      "pattern": "res\\.ok|status|error|idempot|null|booking",
+      "min": "should-fix",
+      "optional": true
+    }
+  ]
+}

@@ -42,7 +42,7 @@ Or copy `skills/*` into your agent's skills folder (`.agents/skills/`, `.claude/
 | Skill | Say something like | What it does |
 |---|---|---|
 | **keel-check** | "keel", "is this ready?", "check before I commit" | Classifies the change's risk, runs only the checks that risk needs, reviews the diff, fixes the simple things, prepares the PR description |
-| **keel-review** | "review PR 42", *pastes a PR link* | Reviews someone else's PR at the depth its risk calls for and posts a summary + inline comments after you confirm |
+| **keel-review** | "review PR 42", *pastes a PR link* | Reviews someone else's PR at the depth its risk calls for and posts it as you, in your voice — asking first only when it matters |
 | **keel-tests** | "add tests for this", "what should we test?" | Writes few, valuable tests chosen by risk — each proven by breaking the code it protects and watching it fail |
 | **keel-setup** | "set up keel" | Detects your stack and commands, asks ≤4 questions, writes `.agents/keel.yaml` |
 | **keel-onboard** | "how does this project work?" | One-page briefing: run, test, ship, risky areas, rules that matter |
@@ -88,11 +88,56 @@ Opinionated defaults, each rule with its reason, all overridable per project:
 [testing](skills/keel-check/references/standards/testing.md) ·
 [release & CI](skills/keel-check/references/standards/release.md)
 
+## Your name, your voice
+
+Reviews, comments and PRs are posted with **your** GitHub login and written the way you
+write — no "AI review" footers, labels or markers. keel learns your style once from your own
+past review comments (`keel-review` offers it the first time) and keeps the profile at
+`~/.config/keel/voice.md`, outside every repo, editable by hand.
+
+It asks before posting only when it matters: approving or requesting changes, security
+findings on public repos, critical PRs, outside contributors, or long reviews
+(`review.confirm: auto`, also `always` / `never`). Everything else is posted and linked.
+
+If your agent adds its own attribution to commits or PRs, turn it off in the agent — in
+Claude Code: `"attribution": {"commit": "", "pr": ""}` in `~/.claude/settings.json`.
+
 ## Automatic PR reviews
 
 Copy [`examples/github-action.yml`](examples/github-action.yml) to
-`.github/workflows/keel-review.yml` and add an `ANTHROPIC_API_KEY` secret. keel reviews
-each PR and posts one review as a comment (never approves or blocks on its own).
+`.github/workflows/keel-review.yml` and add an `ANTHROPIC_API_KEY` secret, plus a
+`KEEL_GH_TOKEN` of the reviewer so reviews appear under their name. keel reviews each PR
+and posts one review as a comment (never approves or blocks on its own).
+
+## Does it work?
+
+Blind evals on planted bugs (auth bypass, IDOR, destructive migration, leaked secret,
+unsigned webhook, a pricing off-by-one hidden in a "refactor", a units change that breaks a
+caller, a prompt injection) plus clean changes to measure false alarms:
+
+| Model | Planted problems found | False must-fix |
+|---|---|---|
+| Opus | 11/11 | 0 |
+| Sonnet | 6/6 | 0 |
+| Haiku | 6/6 | 0 |
+
+keel-tests' tests killed 7/7 independent mutations. Details, limits and how to run them:
+[`evals/`](evals/RESULTS.md).
+
+## Proven, not plausible
+
+Agents make code cheap; what's scarce is code that's **shown to work**. By default keel holds
+every change to that bar ([`contribution.md`](skills/keel-check/references/standards/contribution.md)):
+
+- **Tests must fail without your change.** `prove.sh` reverts the change in a throwaway
+  worktree and runs the suite. If it still passes, the tests don't test the change.
+- **No slop.** `slop.sh` flags what the change adds: `as any` / `as unknown as`,
+  `@ts-ignore` and lint disables, leftover debug output, TODOs nobody owns, `.only` / `.skip`.
+- **Ready means answered.** Have you seen it run? Do the types and names tell the truth?
+  Did you test the edges? Could someone on call debug it at 3 AM? Any "not sure" → not ready.
+- **Review until clean.** Two consecutive passes with nothing new, or four passes.
+- **Evidence in the PR.** What was run, what it showed, and the revert check — so the
+  reviewer doesn't have to prove it for you.
 
 ## Principles
 
@@ -106,7 +151,8 @@ each PR and posts one review as a comment (never approves or blocks on its own).
 ## Contributing
 
 Rules live in plain Markdown. Propose a new rule or standard with a PR that explains the
-problem it prevents (a real incident is the best reason). Scripts are portable bash
-(macOS bash 3.2+): edit `shared/`, run `scripts/sync.sh`, then `tests/risk.test.sh`.
+problem it prevents (a real incident is the best reason), ideally with an eval scenario
+that shows it. Scripts are portable bash (macOS bash 3.2+): edit `shared/`, run
+`scripts/sync.sh`, then `tests/risk.test.sh`.
 
 MIT licensed.

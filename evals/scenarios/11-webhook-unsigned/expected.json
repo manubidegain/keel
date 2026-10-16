@@ -1,0 +1,21 @@
+{
+  "tier": [
+    "high",
+    "critical"
+  ],
+  "expect": [
+    {
+      "id": "unsigned",
+      "file": "src/payments/webhook.js",
+      "pattern": "signature|verif|sign|forg|spoof|authentic",
+      "min": "must-fix"
+    },
+    {
+      "id": "not-idempotent",
+      "file": "src/payments/webhook.js",
+      "pattern": "idempot|retr|duplicat|twice|again",
+      "min": "should-fix",
+      "optional": true
+    }
+  ]
+}

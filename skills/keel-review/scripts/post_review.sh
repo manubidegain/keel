@@ -7,21 +7,25 @@
 #
 #   event: COMMENT                      # COMMENT | REQUEST_CHANGES | APPROVE
 #   === summary
-#   Markdown for the review body…
+#   The review body, written as the user…
 #   === comment src/auth/session.ts:42 must-fix
-#   Markdown for this inline comment…
+#   The inline comment, exactly as it should appear…
 #   === comment src/db/004.sql:3 should-fix
 #   …
 #
-# Comments on lines that are not part of the diff can't be inline on GitHub; they are moved
-# into the summary instead of failing the whole review. Comments identical to a previous
-# keel comment on the same line are skipped. Needs: gh, and `.keel/pr-<n>/` from fetch_pr.sh.
+# The severity after the location is for keel's own counts; it is NOT added to the comment.
+# Nothing is added to what you write: no footer, no labels, no hidden markers.
+# Posts with the user's own gh auth, so the review is theirs.
+# Comments on lines outside the diff can't be inline on GitHub; they're appended to the
+# summary instead. Comments the user already left on the same line (same first words) are
+# skipped. REQUEST_CHANGES and APPROVE need --yes (the user's explicit go-ahead).
+# Needs: gh, and `.keel/pr-<n>/` from fetch_pr.sh.
 set -u
-num="${1:?usage: post_review.sh <pr-number> <review-file> [--repo owner/name] [--dry-run]}"
+num="${1:?usage: post_review.sh <pr-number> <review-file> [--repo owner/name] [--dry-run] [--yes]}"
 file="${2:?review file required}"; shift 2
-repo=""; dry=0
+repo=""; dry=0; yes=0
 while [ $# -gt 0 ]; do
-  case "$1" in --repo) repo="$2"; shift 2;; --dry-run) dry=1; shift;; *) echo "unknown arg $1" >&2; exit 2;; esac
+  case "$1" in --repo) repo="$2"; shift 2;; --dry-run) dry=1; shift;; --yes) yes=1; shift;; *) echo "unknown arg $1" >&2; exit 2;; esac
 done
 dir=".keel/pr-$num"
 [ -f "$dir/lines.tsv" ] || { echo "run fetch_pr.sh $num first" >&2; exit 2; }
@@ -41,6 +45,9 @@ awk -v T="$tmp" '
 ' "$file"
 event=$(cat "$tmp/event" 2>/dev/null || echo COMMENT)
 case "$event" in COMMENT|REQUEST_CHANGES|APPROVE) ;; *) echo "bad event: $event" >&2; exit 2;; esac
+if [ "$event" != COMMENT ] && [ $yes -eq 0 ] && [ $dry -eq 0 ]; then
+  echo "refusing to $event without --yes: approving or requesting changes needs the user's explicit OK" >&2; exit 3
+fi
 touch "$tmp/summary.md"
 
 # JSON string escaping without jq/python: backslash, quote, tab, CR, newlines
@@ -53,32 +60,31 @@ for meta in "$tmp"/c*.meta; do
   loc=$(cut -f1 "$meta"); sev=$(cut -f2 "$meta")
   path="${loc%:*}"; line="${loc##*:}"
   body="$(cat "$md")"
-  tag="**${sev:-note}**"
+  : "${sev:=note}"
   case "$line" in ''|*[!0-9]*) line=0;; esac
   if [ "$line" -gt 0 ] && grep -qxF "$(printf '%s\t%s' "$path" "$line")" "$dir/lines.tsv"; then
     first=$(printf '%s' "$body" | head -1 | cut -c1-60)
     if grep -F "$(printf '%s\t%s\t' "$path" "$line")" "$dir/previous_inline.tsv" 2>/dev/null | grep -qF "$first"; then
       skipped=$((skipped+1)); continue
     fi
-    c="{\"path\":$(json_str "$path"),\"line\":$line,\"side\":\"RIGHT\",\"body\":$(json_str "$tag — $body
-<!-- keel -->")}"
+    c="{\"path\":$(json_str "$path"),\"line\":$line,\"side\":\"RIGHT\",\"body\":$(json_str "$body")}"
     comments="${comments:+$comments,}$c"
     inline=$((inline+1))
   else
     moved="$moved
-- \`$loc\` $tag — $body"
+- \`$loc\`: $body"
     moved_n=$((moved_n+1))
   fi
 done
 
 summary="$(cat "$tmp/summary.md")"
 [ -n "$moved" ] && summary="$summary
+$moved"
+# optional signature, only if the user configured one (e.g. "— Manu")
+sig=$(awk '/^review:/{on=1;next} /^[^[:space:]#]/{on=0} on && /^[[:space:]]+signature:/{sub(/^[^:]*:[[:space:]]*/,""); gsub(/^["'\'']|["'\'']$/,""); print; exit}' .agents/keel.yaml 2>/dev/null)
+[ -n "$sig" ] && summary="$summary
 
-**Other findings** (outside the diff lines):$moved"
-summary="$summary
-
-<sub>Reviewed by [keel](https://github.com/manubidegain/keel) · risk-aware checks for any project</sub>
-<!-- keel:summary -->"
+$sig"
 
 payload="$tmp/payload.json"
 printf '{"event":"%s","commit_id":"%s","body":%s,"comments":[%s]}\n' \

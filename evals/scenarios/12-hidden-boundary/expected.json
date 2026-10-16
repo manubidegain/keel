@@ -1,0 +1,28 @@
+{
+  "tier": [
+    "medium",
+    "high"
+  ],
+  "expect": [
+    {
+      "id": "peak-boundary",
+      "file": "src/pricing.js",
+      "pattern": "18|>=|boundary|off.by.one|peak (start|hour)|strict|exclusive",
+      "min": "must-fix"
+    },
+    {
+      "id": "no-pricing-tests",
+      "file": "",
+      "pattern": "test",
+      "min": "should-fix",
+      "optional": true
+    },
+    {
+      "id": "court-vs-club",
+      "file": "src/clubs.js",
+      "pattern": "court|club",
+      "min": "should-fix",
+      "optional": true
+    }
+  ]
+}

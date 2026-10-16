@@ -1,0 +1,28 @@
+{
+  "tier": [
+    "medium",
+    "high"
+  ],
+  "expect": [
+    {
+      "id": "cents-vs-dollars",
+      "file": "",
+      "pattern": "cent|dollar|unit|amountCents|100",
+      "min": "must-fix"
+    },
+    {
+      "id": "unbounded-range",
+      "file": "src/routes/quote.js",
+      "pattern": "range|cap|limit|iteration|loop|DoS",
+      "min": "should-fix",
+      "optional": true
+    },
+    {
+      "id": "no-price-tests",
+      "file": "",
+      "pattern": "test",
+      "min": "should-fix",
+      "optional": true
+    }
+  ]
+}

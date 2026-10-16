@@ -39,6 +39,9 @@ Read `references/test-value.md` once before writing the first test in a session.
      only the test files afterwards).
    - If it still passes with the bug, the test protects nothing: fix it or delete it.
    Report the result per test: `✓ fails when <bug> is introduced`.
+   When the tests cover a change to existing files (a fix, a behavior change), also run
+   `bash scripts/prove.sh`: it reverts the change in a throwaway worktree and confirms the
+   suite fails without it — the evidence that goes in the PR.
 
 6. **Bug fixes:** write the regression test first and show it failing on the current
    code, then apply/keep the fix and show it passing.

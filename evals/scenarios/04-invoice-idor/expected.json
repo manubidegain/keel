@@ -1,0 +1,14 @@
+{
+  "tier": [
+    "high",
+    "critical"
+  ],
+  "expect": [
+    {
+      "id": "idor",
+      "file": "src/api/invoices.js",
+      "pattern": "owner|authori[sz]|another user|other user|any user|idor|belongs|userId",
+      "min": "must-fix"
+    }
+  ]
+}

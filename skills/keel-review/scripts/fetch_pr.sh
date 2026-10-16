@@ -9,7 +9,8 @@
 #   policy.yaml          .agents/keel.yaml from the BASE branch (if any) — never the PR's version
 #   risk.txt             output of risk.sh on the diff with the base policy
 #   lines.tsv            path<TAB>line for every commentable RIGHT-side line
-#   previous_inline.tsv  earlier keel inline comments (to avoid repeating them)
+#   previous_inline.tsv  your earlier inline comments on this PR (to avoid repeating them)
+#   me                   the GitHub login keel is posting as
 set -u
 here="$(cd "$(dirname "$0")" && pwd)"
 ref="${1:?usage: fetch_pr.sh <pr-number|url> [--repo owner/name]}"; shift
@@ -56,14 +57,18 @@ awk '
   /^ /  { print file "\t" ln; ln++; next }
 ' "$out/pr.diff" > "$out/lines.tsv"
 
+# the user's own earlier inline comments on this PR (to avoid repeating them on re-review)
+me=$(gh api user --jq .login 2>/dev/null || echo "")
 gh api "repos/$repo/pulls/$num/comments" --paginate \
-  --jq '.[] | select(.body | contains("<!-- keel")) | [.path, ((.line // .original_line) | tostring), (.body | gsub("\n"; " "))] | @tsv' \
+  --jq ".[] | select(.user.login == \"$me\") | [.path, ((.line // .original_line) | tostring), (.body | gsub(\"\\n\"; \" \"))] | @tsv" \
   > "$out/previous_inline.tsv" 2>/dev/null || : > "$out/previous_inline.tsv"
+echo "$me" > "$out/me"
 
 echo "pr: $repo#$num"
 gh api "repos/$repo/pulls/$num" --jq '"title: \(.title)\nauthor: \(.user.login)\nfrom fork: \(.head.repo.full_name != .base.repo.full_name)\ndraft: \(.draft)\nstate: \(.state)\nbase: \(.base.ref) <- head: \(.head.ref) (\(.head.sha[0:7]))\nsize: \(.changed_files) files, +\(.additions)/-\(.deletions)"'
 cat "$out/risk.txt"
 extra=""; [ -f "$out/policy.yaml" ] && extra=", policy.yaml (from $base)"
 echo "saved in $out/: meta.json, files.tsv, pr.diff, risk.txt, lines.tsv$extra"
-[ -s "$out/previous_inline.tsv" ] && echo "previous keel comments: $(wc -l < "$out/previous_inline.tsv" | tr -d ' ')"
+echo "posting as: ${me:-unknown}"
+[ -s "$out/previous_inline.tsv" ] && echo "your previous inline comments here: $(wc -l < "$out/previous_inline.tsv" | tr -d ' ')"
 exit 0

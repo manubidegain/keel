@@ -1,0 +1,27 @@
+{
+  "tier": [
+    "medium",
+    "high"
+  ],
+  "expect": [
+    {
+      "id": "not-proven",
+      "file": "",
+      "pattern": "not proven|don.t (test|cover|exercise)|doesn.t (test|cover|exercise)|revert|17",
+      "min": "should-fix"
+    },
+    {
+      "id": "debug-log",
+      "file": "src/pricing.js",
+      "pattern": "console\\.log|debug",
+      "min": "should-fix"
+    },
+    {
+      "id": "todo",
+      "file": "src/pricing.js",
+      "pattern": "TODO|half",
+      "min": "nit",
+      "optional": true
+    }
+  ]
+}

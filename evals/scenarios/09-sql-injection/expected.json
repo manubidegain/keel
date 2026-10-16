@@ -1,0 +1,15 @@
+{
+  "tier": [
+    "low",
+    "medium",
+    "high"
+  ],
+  "expect": [
+    {
+      "id": "sqli",
+      "file": "src/search.js",
+      "pattern": "inject|parameteri|interpolat|placeholder|\\$1",
+      "min": "must-fix"
+    }
+  ]
+}

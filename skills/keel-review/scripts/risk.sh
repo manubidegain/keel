@@ -73,12 +73,35 @@ $2
 GLOBS
   return 1
 }
-user_globs=""; relaxed=""; data=""
+user_globs=""; relaxed=""; data=""; freeze=""
+read_policy() { # read_policy <file>: append its lists, first data: wins (child before parent)
+  [ -f "$1" ] || return 0
+  policy="$1"
+  user_globs="$user_globs
+$(yaml_list sensitive)"
+  relaxed="$relaxed
+$(yaml_list relaxed)"
+  freeze="$freeze
+$(yaml_list freeze)"
+  [ -z "$data" ] && data=$(awk '/^[[:space:]]*data:/{sub(/^[^:]*:[[:space:]]*/,""); print; exit}' "$1")
+  return 0
+}
 if [ -n "$policy" ] && [ -f "$policy" ]; then
-  user_globs=$(yaml_list sensitive)
-  relaxed=$(yaml_list relaxed)
-  data=$(awk '/^[[:space:]]*data:/{sub(/^[^:]*:[[:space:]]*/,""); print; exit}' "$policy")
+  child="$policy"
+  read_policy "$child"
+  # extends: a local path (relative to the policy file) is merged here; remote URLs are
+  # left to the agent, which fetches them (scripts never touch the network).
+  parent=$(awk '/^extends:/{sub(/^extends:[[:space:]]*/,""); gsub(/["'\'']/,""); sub(/[[:space:]]+#.*$/,""); print; exit}' "$child")
+  case "$parent" in
+    ''|http*|github.com/*|*://*) ;;
+    /*) read_policy "$parent" ;;
+    *) read_policy "$(dirname "$child")/$parent" ;;
+  esac
+  policy="$child"
 fi
+user_globs=$(printf '%s\n' "$user_globs" | sed '/^$/d')
+relaxed=$(printf '%s\n' "$relaxed" | sed '/^$/d')
+freeze=$(printf '%s\n' "$freeze" | sed '/^$/d')
 
 # drop relaxed paths (generated / vendored code) from everything
 if [ -n "$relaxed" ]; then
@@ -141,6 +164,22 @@ secrets=$(grep -E 'AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|sk_live_[
   | cut -f1 | sort -u | head -5 | paste -sd',' - | sed 's/,/, /g')
 [ -n "$secrets" ] && bump 3 "possible secret committed: $secrets"
 
+# content signals — what the added code does, not where it lives (code files only, tests excluded)
+code_lines="$tmp/code_added.txt"
+grep -Ev '^[^	]*((^|/)(tests?|__tests__|spec|specs|e2e|cypress)/|[._-](test|spec)\.[a-z]+	|_test\.go	)' "$tmp/added.txt" \
+  | grep -E '^[^	]+\.(js|jsx|ts|tsx|mjs|cjs|py|go|rb|php|java|kt|swift|rs|dart|cs|vue|svelte)	' \
+  | grep -Ev '	[[:space:]]*(//|#|\*|/\*|--)' > "$code_lines" || true   # skip comment lines
+content_hit() { grep -Ei "$1" "$code_lines" | cut -f1 | sort -u | head -5 | paste -sd',' - | sed 's/,/, /g'; }
+
+hit=$(content_hit '(select|insert|update|delete)[[:space:]].*(\$\{|"[[:space:]]*\+|'"'"'[[:space:]]*\+|%s|\.format\(|f"[^"]*\{)')
+[ -n "$hit" ] && bump 2 "SQL built from strings (possible injection): $hit"
+hit=$(content_hit '(createHmac|timingSafeEqual|bcrypt|scrypt|argon2|jwt\.|jsonwebtoken|verify(Token|Session|Signature|Password)|isAdmin|role[[:space:]]*[!=]==?|permission|authorize)')
+[ -n "$hit" ] && bump 2 "auth/crypto logic in code: $hit"
+hit=$(content_hit '(refund|charge|payout|credit(_?cents)?|balance|amount_?cents|amountCents|price(_?cents)?|invoice|stripe|mercadopago|paypal)')
+[ -n "$hit" ] && bump 1 "money-related logic: $hit"
+hit=$(content_hit '(sendEmail|sendMail|sendSms|sendPush|webhook|setInterval|cron|schedule\()')
+[ -n "$hit" ] && bump 1 "side effects (messages, webhooks, schedules): $hit"
+
 # size
 if [ "$added_n" -gt 800 ] || [ "$files_n" -gt 30 ]; then bump 1 "large change: $files_n files, +$added_n/-$removed_n"
 elif [ "$added_n" -gt 300 ] || [ "$files_n" -gt 15 ]; then bump 1 "medium-size change: $files_n files, +$added_n/-$removed_n"; fi
@@ -167,6 +206,31 @@ fi
 if [ "$files_n" -gt 0 ] && [ "$score" -eq 0 ]; then
   nondoc=$(grep -Evc '\.(md|mdx|txt|rst|png|jpg|jpeg|gif|svg|webp)$|(^|/)(docs?|LICENSE|CHANGELOG)' "$tmp/paths")
   [ "$nondoc" -eq 0 ] && printf '0\t%s\n' "docs/assets only" >> "$reasons"
+fi
+
+# freeze windows, weekly, local time: "Fri 16:00-Mon 08:00". KEEL_NOW="Fri 17:30" overrides (tests).
+in_freeze() {
+  now="${KEEL_NOW:-$(date +'%a %H:%M')}"
+  mow() { # minutes-of-week for "Day HH:MM" (Mon = 0)
+    d=$(printf '%s' "$1" | awk '{print tolower(substr($1,1,3))}')
+    t=$(printf '%s' "$1" | awk '{print $2}')
+    case "$d" in mon) n=0;; tue) n=1;; wed) n=2;; thu) n=3;; fri) n=4;; sat) n=5;; sun) n=6;; *) return 1;; esac
+    h=${t%%:*}; m=${t##*:}
+    echo $(( n*1440 + 10#$h*60 + 10#$m ))
+  }
+  cur=$(mow "$now") || return 1
+  while IFS= read -r w; do
+    [ -z "$w" ] && continue
+    s=$(mow "${w%%-*}") || continue; e=$(mow "${w#*-}") || continue
+    if [ "$s" -le "$e" ]; then [ "$cur" -ge "$s" ] && [ "$cur" -lt "$e" ] && { echo "$w"; return 0; }
+    else { [ "$cur" -ge "$s" ] || [ "$cur" -lt "$e" ]; } && { echo "$w"; return 0; }; fi
+  done <<FREEZE
+$freeze
+FREEZE
+  return 1
+}
+if [ "$score" -eq 2 ] && [ -n "$freeze" ]; then
+  w=$(in_freeze) && bump 3 "high-risk change during freeze window ($w)"
 fi
 
 case $score in 0) tier=low;; 1) tier=medium;; 2) tier=high;; 3) tier=critical;; esac
