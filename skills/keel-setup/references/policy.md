@@ -53,7 +53,7 @@ review:
   max_comments: 15         # cap inline comments per review; the rest go in the summary
   nits: false              # post nits at all?
   signature: ""            # appended to review summaries only if set, e.g. "— Manu"
-  ui: terminal             # terminal | plannotator — where to show a review before posting
+  ui: terminal             # terminal | plannotator — where to show reviews and plans
 ```
 
 ## Field notes
@@ -70,7 +70,9 @@ review:
   public repos, critical PRs, outside contributors and big reviews; posts the rest directly.
 - **review.ui: plannotator** opens the drafted review on the diff in
   [Plannotator](https://plannotator.ai) whenever keel would ask first: edit, delete or add
-  comments, then "Send Feedback" posts exactly that. With `confirm: always` every review goes
+  comments, then "Send Feedback" posts exactly that. keel-plan uses it too: notes pinned to
+  the plan's text, Approve or Send Feedback (it opens high/critical plans there whenever
+  Plannotator is installed). With `confirm: always` every review goes
   through it. Falls back to the terminal if Plannotator isn't installed. It's a personal
   preference, so it can also go in `~/.config/keel/voice.md` as `ui: plannotator`.
 - The voice profile is personal and lives outside the repo: `~/.config/keel/voice.md`.

@@ -2,7 +2,8 @@
 
 **Risk-aware checks and code review for any project, as agent skills.**
 
-keel is the senior teammate who looks at your change before it ships: it takes a second on
+keel is the senior teammate who looks at your plan before you build it and at your change
+before it ships: it takes a second on
 a typo fix and gets thorough when you touch auth, payments or a migration. It fixes the
 easy stuff itself, asks only what needs judgment, and leaves your PR description ready.
 It also reviews other people's pull requests and comments on them.
@@ -41,6 +42,7 @@ Or copy `skills/*` into your agent's skills folder (`.agents/skills/`, `.claude/
 
 | Skill | Say something like | What it does |
 |---|---|---|
+| **keel-plan** | "plan this", "check my plan", *a spec or issue* | Classifies the plan's risk before any code exists, finds who the change affects in the code, and flags what a risky plan must answer (rollback, backups, the test that proves it) — one line for small plans |
 | **keel-check** | "keel", "is this ready?", "check before I commit" | Classifies the change's risk, runs only the checks that risk needs, reviews the diff, fixes the simple things, prepares the PR description |
 | **keel-review** | "review PR 42", *pastes a PR link* | Reviews someone else's PR at the depth its risk calls for and posts it as you, in your voice — asking first only when it matters |
 | **keel-tests** | "add tests for this", "what should we test?" | Writes few, valuable tests chosen by risk — each proven by breaking the code it protects and watching it fail |
@@ -59,6 +61,21 @@ A script (no AI, ~instant) reads the diff and assigns a tier:
 | **critical** | irreversible data operations, possible secrets, high-risk during a freeze | + written rollback, owner sign-off |
 
 Most changes are low and get a one-line answer. You only pay for depth when it matters.
+
+## Plan, build, check, review
+
+The same risk tiers run through the whole loop:
+
+1. **keel-plan** — before code. `drops the legacy_notes column` with no backup gets caught
+   while fixing it costs a line, and keel adds what it found in the code ("still read in
+   `src/admin/export.ts:12`") so the plan is about the real system.
+2. **keel-check** — before commit. Runs what the tier needs, proves the tests catch the
+   change, and checks the diff against the approved plan.
+3. **keel-review** — on someone else's PR, posted as you.
+
+With [Plannotator](https://plannotator.ai), plans and reviews open as documents you can
+comment on: keel's notes are pinned to the exact phrase or line, you edit, delete or add,
+and send. Optional — the terminal works the same.
 
 ## Configure (optional)
 
@@ -99,7 +116,7 @@ It asks before posting only when it matters: approving or requesting changes, se
 findings on public repos, critical PRs, outside contributors, or long reviews
 (`review.confirm: auto`, also `always` / `never`). Everything else is posted and linked.
 
-Prefer to see it on the diff first? With [Plannotator](https://plannotator.ai) installed and
+Prefer to see it on the diff first? With Plannotator installed and
 `review.ui: plannotator` in your policy, keel opens its draft there with every comment
 already on its line. Edit, delete or add comments, hit "Send Feedback", and keel posts
 exactly what you left — or post straight from Plannotator. Without it, everything stays in

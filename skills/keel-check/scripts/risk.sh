@@ -6,18 +6,21 @@
 #   risk.sh --base <ref>         # diff against a given ref
 #   risk.sh --diff-file <file>   # classify an existing unified diff (e.g. `gh pr diff 123 > pr.diff`)
 #   --policy <file>              # policy file (default .agents/keel.yaml in cwd)
+#   --signal "<0-3>:<why>"       # extra signal from a caller (repeatable; used by plan_risk.sh)
 #   add --json for machine output
 #
 # Portable: bash 3.2+ (macOS default), git, awk, grep. Reads .agents/keel.yaml if present.
 set -u
 
-base=""; diff_file=""; json=0; policy_arg=""
+base=""; diff_file=""; json=0; policy_arg=""; extra=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --base) base="$2"; shift 2 ;;
     --diff-file) diff_file="$2"; shift 2 ;;
     --json) json=1; shift ;;
     --policy) policy_arg="$2"; shift 2 ;;
+    --signal) extra="$extra
+$2"; shift 2 ;;
     -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
@@ -193,6 +196,14 @@ code_add=$(grep -Ev "$is_test" "$tmp/files.tsv" | RE="$is_code" awk -F'\t' 'BEGI
 if [ "$code_n" -gt 0 ] && [ "$test_n" -eq 0 ] && [ "$code_add" -gt 40 ]; then
   bump 1 "code changed (+$code_add lines in $code_n files) with no test changes"
 fi
+
+# signals passed in by the caller (e.g. intents read from a plan)
+while IFS= read -r sig; do
+  [ -z "$sig" ] && continue
+  lvl="${sig%%:*}"; case "$lvl" in [0-3]) bump "$lvl" "${sig#*:}";; esac
+done <<SIGNALS
+$extra
+SIGNALS
 
 # data-sensitivity floor: in projects that handle sensitive data, side effects and
 # dependency changes are no longer "medium" — they can leak or corrupt that data.

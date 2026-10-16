@@ -42,6 +42,21 @@ itself) names the right file, matches the problem, and has at least the expected
 Any other must-fix is a false alarm. Other should-fix findings are listed for review — in
 practice most were real problems we hadn't planted.
 
+## Plans (keel-plan)
+
+`plans/<name>/` holds a request, a written plan and `expected.json`. The repo is the base
+fixture, unchanged — nothing is built, only the plan is judged.
+
+| Plan | Planted gap | Expected tier |
+|---|---|---|
+| p1-readme | none — docs only | low, no notes |
+| p2-admin-cancel | "refund like normal" credits the *caller*, so the admin gets the money; no admin role exists | high |
+| p3-contacts | copy + DROP in one migration, no backup; the email column was `unique`; "no tests needed" | critical |
+| p4-peak-hours | none — clean plan with edges, rollback and impact | medium, no "must" |
+
+Run each with `evals/plan_prompt.md` (fill `{REPO}`, `{REQUEST}`, `{PLAN}`, `{SKILLS}`, `{OUT}`,
+`{NAME}`), then `python3 evals/grade_plan.py <results_dir>`.
+
 ## Results — 2026-10-16
 
 See [RESULTS.md](RESULTS.md).

@@ -22,14 +22,17 @@ done
 for s in keel-check keel-review keel-tests; do
   for f in detect.sh prove.sh slop.sh; do copy "shared/$f" "skills/$s/scripts/$f"; done
 done
+for f in risk.sh plan_risk.sh; do copy "shared/$f" "skills/keel-plan/scripts/$f"; done
 copy shared/run.sh skills/keel-tests/scripts/run.sh
 copy shared/detect.sh skills/keel-onboard/scripts/detect.sh
 
 copy skills/keel-check/references/tiers.md skills/keel-review/references/tiers.md
 copy shared/voice.md skills/keel-check/references/voice.md
 copy shared/voice.md skills/keel-review/references/voice.md
+copy skills/keel-check/references/tiers.md skills/keel-plan/references/tiers.md
 for f in skills/keel-check/references/standards/*.md; do
   copy "$f" "skills/keel-review/references/standards/$(basename "$f")"
+  copy "$f" "skills/keel-plan/references/standards/$(basename "$f")"
 done
 
 [ $check -eq 0 ] && chmod +x skills/*/scripts/*.sh shared/*.sh && echo "synced"

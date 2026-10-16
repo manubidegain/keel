@@ -59,6 +59,10 @@ on risky ones, and useful — it fixes and prepares things, it does not just com
      untouched behavior goes in one `noticed:` line at the end, never as must/should-fix.
    - **Nits are not shown** — not even as "hidden" — unless the policy sets `review.nits: true`.
    - **Missing tests are one line**, not a finding per file (see step 9).
+   - **Against the plan.** If `.keel/plan.md` exists (an approved plan from keel-plan for this
+     work), compare: planned steps not done, promised tests or rollback missing, or changes
+     in risky areas the plan never mentioned. One `plan:` line; a missing promised rollback
+     or backup on high/critical is must-fix. Done differently but better is fine — say so.
 
 5. **Fix what is safe to fix** without asking: failing lint/format, unused imports, obvious
    typos, a missing `await`, a test that fails because of a trivial mismatch you can prove.
@@ -101,6 +105,7 @@ should-fix
 fixed for you
   · removed 2 unused imports · fixed build error (missing export in auth/index.ts)
 tests: nothing checks that an expired session is rejected — want keel-tests to add it?
+plan: done as planned, except the "rotate on login" step — not in the diff
 noticed: (not from this change) logout doesn't clear the refresh cookie
 next: fix #1 (want me to?) · PR description ready in .keel/pr.md
 ```

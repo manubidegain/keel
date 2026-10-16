@@ -1,0 +1,8 @@
+{
+  "tier": ["high", "critical"],
+  "max_notes": 8,
+  "expect": [
+    {"id": "credit-goes-to-admin", "pattern": "(credit|refund).{0,160}(admin|caller|userId|owner|booking\\.userId|wrong (user|person|account))|(admin|caller).{0,160}(credit|refund)", "min": "must"},
+    {"id": "no-admin-concept", "pattern": "isAdmin.{0,80}(exist|defined|implement|where|how)|(no|not|doesn.t|isn.t|without)[^.]{0,60}(role|admin flag|is_admin|admin column|admin concept)|(role|is_admin)[^.]{0,40}(column|field|users table)", "min": "should"}
+  ]
+}

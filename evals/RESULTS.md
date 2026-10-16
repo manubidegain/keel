@@ -77,3 +77,20 @@ After the rule changes, Haiku on the 4 noisiest scenarios: unexpected should-fix
 - Small fixtures (one app, JavaScript). Real repos are bigger and messier; numbers will be lower there.
 - One run per scenario/model, so no variance yet.
 - keel-review's posting path was tested against a stubbed GitHub, not a live PR.
+
+## keel-plan (4 plans, Opus and Haiku)
+
+Plans only, nothing built. See `plans/` for the planted gaps.
+
+| Plan | Opus | Haiku |
+|---|---|---|
+| p1 README (low) | "LOW · Go", 0 notes | "LOW · Go", 0 notes |
+| p2 admin cancels (high) | **must**: refund credits the admin, not the owner; no admin role exists; double refund on a second cancel | same three, all as must |
+| p3 email → contacts (critical) | **must**: DROP with no backup in the same deploy as the copy; `unique` lost; "no tests needed" | same, plus "expand, migrate, contract" |
+| p4 peak hours (medium, clean plan) | 0 must; 2 should + 1 question (the hours are UTC, not club time) | 0 must; 4 notes — one over our cap of 3, all real |
+
+7/8 passed the grader (`grade_plan.py`), 0 false "must" on the clean plans. Both models
+found what the plan didn't say but the code did: `cancel()` credits the caller, nothing in
+the repo reads `users.email`, `priceFor` has one caller that stores the price at booking
+time. 5–9 tool calls per plan. After this run the medium cap went from 5 to 3 notes, and a
+low-tier plan that doesn't do what was asked now gets one extra line instead of silence.

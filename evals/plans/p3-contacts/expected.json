@@ -1,0 +1,9 @@
+{
+  "tier": ["critical"],
+  "max_notes": 8,
+  "expect": [
+    {"id": "drop-without-backup-or-two-step", "pattern": "backup|rollback|roll back|undo|irreversib|two.(step|phase|deploy)|expand|separate (migration|deploy|release)|later (migration|release|deploy)|after (the )?(code|deploy)", "min": "must"},
+    {"id": "unique-lost", "pattern": "unique", "min": "should"},
+    {"id": "tests-needed", "pattern": "test", "min": "should"}
+  ]
+}

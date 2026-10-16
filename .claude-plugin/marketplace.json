@@ -5,7 +5,7 @@
     {
       "name": "keel",
       "source": "./",
-      "description": "Risk-aware checks and code review for any project."
+      "description": "Risk-aware planning, checks and code review for any project."
     }
   ]
 }
